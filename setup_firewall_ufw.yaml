@@ -1,0 +1,41 @@
+- name: Install and set up UFW on a fresh linux server
+  hosts: testservers
+  become: true;
+  vars:
+      sudo_user: user_ansible
+
+  tasks:
+    - name: Add {{ sudo_user }} user
+      user:
+        name: "{{ sudo_user }}"
+        groups: sudo
+        append: true
+        state: present
+        createhome: true
+
+    - name: Make sudo without password for {{ sudo_user }} user
+      copy:
+        dest: /etc/sudoers.d/80-ansible-sudo-user
+        content: "{{ sudo_user }} ALL=(ALL) NOPASSWD:ALL"
+        mode: 0440
+
+    - name: Apt update and installing fail2ban
+      ansible.builtin.apt:
+        name: ufw
+        update_cache: yes
+
+    - name: Allow all access to tcp port 
+      community.general.ufw:
+        rule: allow
+        port: '14'
+        proto: tcp
+
+    - name: Allow all access to tcp port 
+      community.general.ufw:
+        rule: allow
+        port: '22'
+        proto: tcp
+
+    - name: Enable UFW 
+      community.general.ufw:
+        state: enabled

@@ -1,0 +1,35 @@
+- name: Install and set up Fail2Ban on a fresh linux server
+  hosts: testservers
+  become: true
+  vars: 
+    sudo_user: user_ansible
+
+  tasks:
+    - name: Add {{ sudo_user }} user
+      user:
+        name: "{{ sudo_user }}"
+        groups: sudo
+        append: true
+        state: present
+        createhome: true
+
+    - name: Make sudo without password for {{ sudo_user }} user
+      copy:
+        dest: /etc/sudoers.d/80-ansible-sudo-user
+        content: "{{ sudo_user }} ALL=(ALL) NOPASSWD:ALL"
+        mode: 0440
+
+    - name: Apt update and installing fail2ban
+      ansible.builtin.apt:
+        name: fail2ban
+        update_cache: yes
+
+    - name: start fail2ban
+      ansible.builtin.systemd:
+        name: fail2ban
+        state: started
+
+    - name: enable fail2ban on startup
+      ansible.builtin.systemd:
+        name: fail2ban
+        enabled: true 
